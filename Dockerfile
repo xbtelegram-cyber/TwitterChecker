@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     libu2f-udev \
     libvulkan1 \
     ca-certificates \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Встановлення Google Chrome
