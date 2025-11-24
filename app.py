@@ -121,8 +121,8 @@ class TwitterMonitor:
         try:
             print(f"  🔍 Завантаження профілю...")
             self.driver.get(url)
-            # Зменшуємо затримку до 2 секунд
-            time.sleep(2)
+            # Збільшуємо затримку до 3-4 секунд для повного завантаження
+            time.sleep(3.5)
             page_source = self.driver.page_source
             soup = BeautifulSoup(page_source, 'html.parser')
             tweet_items = soup.find_all('div', class_='timeline-item')
@@ -182,30 +182,27 @@ class TwitterMonitor:
             return []
 
         stored_latest_id = self.tweet_storage[username]['latest_tweet_id']
-        stored_ids = set(self.tweet_storage[username]['all_tweet_ids'])
+        stored_ids = set(self.tweet_storage[username].get('all_tweet_ids', []))
 
-        # Якщо є новий твіт (ID відрізняється)
-        if latest_tweet_id != stored_latest_id:
-            # Знаходимо ТІЛЬКИ нові твіти (яких немає в stored_ids)
-            new_tweets = []
-            for tweet in tweets:
-                if tweet['id'] not in stored_ids:
-                    new_tweets.append(tweet)
-                else:
-                    # Як тільки знайшли знайомий твіт, зупиняємось
-                    # (бо далі йдуть старіші твіти)
-                    break
+        # Знаходимо ТІЛЬКИ нові твіти (яких немає в stored_ids)
+        new_tweets = []
+        for tweet in tweets:
+            if tweet['id'] not in stored_ids:
+                new_tweets.append(tweet)
+            else:
+                # Як тільки знайшли знайомий твіт, зупиняємось
+                # (бо далі йдуть старіші твіти)
+                break
 
-            # Оновлюємо storage ТІЛЬКИ новими ID
-            if new_tweets:
-                # Додаємо нові ID на початок списку
-                new_ids = [tweet['id'] for tweet in new_tweets]
-                updated_all_ids = new_ids + self.tweet_storage[username]['all_tweet_ids']
+        # Оновлюємо storage ТІЛЬКИ якщо є нові твіти
+        if new_tweets:
+            # Додаємо нові ID на початок списку
+            new_ids = [tweet['id'] for tweet in new_tweets]
+            updated_all_ids = new_ids + list(stored_ids)
 
-                # Зберігаємо максимум 100 останніх ID (щоб не росло безмежно)
-                self.tweet_storage[username]['all_tweet_ids'] = updated_all_ids[:100]
-                self.tweet_storage[username]['latest_tweet_id'] = latest_tweet_id
-
+            # Зберігаємо максимум 100 останніх ID (щоб не росло безмежно)
+            self.tweet_storage[username]['all_tweet_ids'] = updated_all_ids[:100]
+            self.tweet_storage[username]['latest_tweet_id'] = latest_tweet_id
             self.tweet_storage[username]['last_checked'] = datetime.now().isoformat()
             self.save_storage()
 
@@ -256,11 +253,11 @@ class TwitterMonitor:
             else:
                 print(f"  ✓ Нових твітів немає\n")
 
-            # ВАЖЛИВА затримка між перевіркою кожного юзера (5 секунд)
-            # Це дає час системі обробити дані і запобігає пропуску постів
-            time.sleep(5)
+            # Затримка між перевіркою кожного юзера (3 секунди)
+            # Запобігає перевантаженню та дає час обробити дані
+            time.sleep(3)
 
-    def monitor_continuous(self, interval=300):
+    def monitor_continuous(self, interval=30):
         interval_min = interval / 60
         print(f"{'='*60}")
         print(f"🚀 Запуск безперервного моніторингу")
@@ -281,9 +278,9 @@ class TwitterMonitor:
 
 def main():
     monitor = TwitterMonitor()
-    # Змінено на 60 секунд для більш стабільної роботи
-    # З урахуванням 5 сек затримки між юзерами, це оптимально
-    monitor.monitor_continuous(interval=60)
+    # Інтервал 30 секунд - швидша реакція на нові пости
+    # З урахуванням 3 сек затримки між юзерами це оптимально
+    monitor.monitor_continuous(interval=30)
 
 if __name__ == "__main__":
     main()

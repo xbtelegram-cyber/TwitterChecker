@@ -29,6 +29,9 @@ RUN apt-get update && apt-get install -y \
     libvulkan1 \
     ca-certificates \
     libglib2.0-0 \
+    libxkbcommon0 \
+    libxrandr2 \
+    libxcb1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Встановлення Google Chrome
